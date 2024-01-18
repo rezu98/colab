@@ -1,1 +1,35 @@
+!pip install numpy
+!pip install dynare
 
+import numpy as np
+from dynare import *
+
+# Define model parameters
+beta = 0.99  # Discount factor
+sigma = 0.5  # Inverse of intertemporal substitution elasticity
+kappa = 0.25  # Calvo price stickiness parameter
+rho = 0.95  # Autocorrelation of technology shock
+phi_pi = 1.5  # Taylor rule coefficient on inflation
+phi_y = 0.5  # Taylor rule coefficient on output gap
+
+# Define model variables
+y = var('y', period=0)  # Output gap
+pi = var('pi', period=0)  # Inflation
+r = var('r', period=0)  # Nominal interest rate
+
+# Define model equations
+eq = {
+    pi - beta*E(pi(1)) == kappa*(y - y(-1)),  # NKPC
+    y + r + E(pi(1)) + y(-1) == rho*y(-2) + epsilon,  # IS curve
+    r == phi_pi*pi + phi_y*y  # Taylor rule
+}
+
+# Define shocks
+epsilon = Expectation(Normal(0, 0.1), True)
+
+# Solve the model
+model = Model(eq, shock=epsilon)
+model.solve(horizon=40)
+
+# Simulate the model
+model.simulate()
